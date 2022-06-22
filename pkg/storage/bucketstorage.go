@@ -1,11 +1,16 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/kubecost/opencost/pkg/env"
+	"github.com/kubecost/opencost/pkg/log"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // StorageProvider is the type of provider used for storage if not leveraging a file implementation.
@@ -26,7 +31,7 @@ type StorageConfig struct {
 
 // NewBucketStorage initializes and returns new Storage implementation leveraging the storage provider
 // configuration. This configuration type uses the layout provided in thanos: https://thanos.io/tip/thanos/storage.md/
-func NewBucketStorage(config []byte) (Storage, error) {
+func NewBucketStorage(namespaces v1.NamespaceInterface, config []byte) (Storage, error) {
 	storageConfig := &StorageConfig{}
 	if err := yaml.UnmarshalStrict(config, storageConfig); err != nil {
 		return nil, errors.Wrap(err, "parsing config YAML file")
@@ -38,6 +43,9 @@ func NewBucketStorage(config []byte) (Storage, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal content of storage configuration")
 	}
+
+	clusterID := getClusterIdentifier(namespaces)
+	fmt.Println(clusterID)
 
 	var storage Storage
 	switch strings.ToUpper(string(storageConfig.Type)) {
@@ -78,4 +86,19 @@ func trimName(file string) string {
 
 	name := file[slashIndex+1:]
 	return name
+}
+
+func getClusterIdentifier(namespaces v1.NamespaceInterface) string {
+	clusterID := env.GetClusterID()
+
+	ns, err := namespaces.Get(context.Background(), "kube-system", metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("Unable to get kube-system namespace: %s", err.Error())
+		return ""
+	}
+
+	if clusterID != "" {
+		return string(ns.UID)[:5] + "-" + clusterID
+	}
+	return string(ns.UID)[:10]
 }

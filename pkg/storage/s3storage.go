@@ -157,6 +157,7 @@ func DefaultS3Transport(config S3Config) (*http.Transport, error) {
 
 // S3Storage provides storage via S3
 type S3Storage struct {
+	// name is the bucket from the S3Config object
 	name            string
 	client          *minio.Client
 	defaultSSE      encrypt.ServerSide

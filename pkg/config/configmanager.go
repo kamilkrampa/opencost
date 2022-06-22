@@ -6,6 +6,7 @@ import (
 
 	"github.com/kubecost/opencost/pkg/log"
 	"github.com/kubecost/opencost/pkg/storage"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 //--------------------------------------------------------------------------
@@ -52,7 +53,7 @@ type ConfigFileManager struct {
 }
 
 // NewConfigFileManager creates a new backing storage and configuration file manager
-func NewConfigFileManager(opts *ConfigFileManagerOpts) *ConfigFileManager {
+func NewConfigFileManager(namespaces v1.NamespaceInterface, opts *ConfigFileManagerOpts) *ConfigFileManager {
 	if opts == nil {
 		opts = DefaultConfigFileManagerOpts()
 	}
@@ -63,7 +64,7 @@ func NewConfigFileManager(opts *ConfigFileManagerOpts) *ConfigFileManager {
 		if err != nil {
 			log.Warnf("Failed to initialize config bucket storage: %s", err)
 		} else {
-			bucketStore, err := storage.NewBucketStorage(bucketConfig)
+			bucketStore, err := storage.NewBucketStorage(namespaces, bucketConfig)
 			if err != nil {
 				log.Warnf("Failed to create config bucket storage: %s", err)
 			} else {

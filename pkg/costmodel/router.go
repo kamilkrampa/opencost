@@ -1504,10 +1504,11 @@ func Initialize(additionalConfigWatchers ...*watcher.ConfigMapWatcher) *Accesses
 	}
 
 	// Create ConfigFileManager for synchronization of shared configuration
-	confManager := config.NewConfigFileManager(&config.ConfigFileManagerOpts{
-		BucketStoreConfig: env.GetKubecostConfigBucket(),
-		LocalConfigPath:   "/",
-	})
+	confManager := config.NewConfigFileManager(kubeClientset.CoreV1().Namespaces(),
+		&config.ConfigFileManagerOpts{
+			BucketStoreConfig: env.GetKubecostConfigBucket(),
+			LocalConfigPath:   "/",
+		})
 
 	configPrefix := env.GetConfigPathWithDefault("/var/configs/")
 
